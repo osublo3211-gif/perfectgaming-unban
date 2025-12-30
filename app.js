@@ -8,6 +8,9 @@ const CONFIG = {
 const PRICES = { cheater: 15, troller: 10 };
 const LABELS = { cheater: "צ׳יטרים", troller: "טרולרים" };
 
+// --------------------
+// Utils
+// --------------------
 function makeOrderId(){
   const n = Math.floor(100000 + Math.random() * 900000);
   return "PG-" + n;
@@ -16,12 +19,17 @@ function saveOrder(order){
   localStorage.setItem("pg_order", JSON.stringify(order));
 }
 function loadOrder(){
-  try{ return JSON.parse(localStorage.getItem("pg_order") || "null"); } catch { return null; }
+  try { return JSON.parse(localStorage.getItem("pg_order") || "null"); }
+  catch { return null; }
 }
 function setText(id, v){
   const el = document.getElementById(id);
   if (el) el.textContent = v;
 }
+
+// --------------------
+// Ticket builder
+// --------------------
 function buildTicket(order){
   return `שלום צוות PerfectGaming,
 
@@ -44,42 +52,31 @@ ${order.appeal}
 
 תודה.`;
 }
+
+// --------------------
+// Payment links
+// --------------------
 function buildPayPalLink(amount){
-  if(!CONFIG.PAYPAL_ME_USERNAME || CONFIG.PAYPAL_ME_USERNAME.startsWith("CHANGE_ME")) return "";
+  if (!CONFIG.PAYPAL_ME_USERNAME || CONFIG.PAYPAL_ME_USERNAME.startsWith("CHANGE_ME")) return "";
   return `https://www.paypal.me/${encodeURIComponent(CONFIG.PAYPAL_ME_USERNAME)}/${encodeURIComponent(amount)}`;
 }
-function buildBitLink(amount, orderId){
-  if(!CONFIG.BIT_PAYMENT_URL || CONFIG.BIT_PAYMENT_URL.startsWith("CHANGE_ME")) return "";
-  try{
-    const u = new URL(CONFIG.BIT_PAYMENT_URL);
-    u.searchParams.set("amount", String(amount));
-    u.searchParams.set("order", orderId);
-    return u.toString();
-  }catch{
-    return CONFIG.BIT_PAYMENT_URL;
-  }
-}
 
+// --------------------
+// INDEX (order form)
+// --------------------
 function initIndex(){
-  window.PG_updatePrice = null;
-
-  const year = document.getElementById("year");
-  if (year) year.textContent = new Date().getFullYear();
-
   const typeSel = document.getElementById("type");
   const priceEl = document.getElementById("price");
   const form = document.getElementById("orderForm");
   if(!typeSel || !priceEl || !form) return;
 
-  const update = () => {
+  const updatePrice = () => {
     const amt = Number(PRICES[typeSel.value] ?? 0);
     priceEl.textContent = String(amt);
-    document.documentElement.dataset.amount = String(amt);
   };
-  window.PG_updatePrice = update;
 
-  typeSel.addEventListener("change", update);
-  update();
+  typeSel.addEventListener("change", updatePrice);
+  updatePrice();
 
   form.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -96,7 +93,7 @@ function initIndex(){
       reason: String(fd.get("reason") || "").trim(),
       admin: String(fd.get("admin") || "").trim(),
       appeal: String(fd.get("appeal") || "").trim(),
-      txnId: "" // יישמר בעמוד תשלום
+      txnId: ""
     };
 
     saveOrder(order);
@@ -104,22 +101,26 @@ function initIndex(){
   });
 }
 
+// --------------------
+// PAY (checkout)
+// --------------------
 function initPay(){
   const order = loadOrder();
-  if(!order){ window.location.href = "index.html"; return; }
+  if(!order){
+    window.location.href = "index.html";
+    return;
+  }
 
   setText("orderId", order.orderId);
   setText("typeLabel", order.typeLabel);
   setText("amount", String(order.amount));
 
   const paypalBtn = document.getElementById("paypalBtn");
-  const bitBtn = document.getElementById("bitBtn");
-
   const txnInput = document.getElementById("txnId");
   const confirmPaid = document.getElementById("confirmPaid");
   const afterBtn = document.getElementById("afterPayBtn");
 
-  // PayPal link
+  // PayPal button
   const paypalLink = buildPayPalLink(order.amount);
   if (paypalBtn){
     if (paypalLink){
@@ -127,27 +128,20 @@ function initPay(){
       paypalBtn.target = "_blank";
       paypalBtn.rel = "noopener";
     } else {
-      paypalBtn.href = "#";
-      paypalBtn.addEventListener("click",(e)=>{
+      paypalBtn.addEventListener("click", (e) => {
         e.preventDefault();
-        alert("אין PayPal.me מחובר. בדוק PAYPAL_ME_USERNAME בקובץ app.js");
+        alert("PayPal לא מחובר. בדוק PAYPAL_ME_USERNAME בקובץ app.js");
       });
     }
   }
 
-  // Bit locked for now
-  if (bitBtn){
-    // do nothing (button is disabled in pay.html)
-  }
-
-  // --- LOCK: allow continue only with Transaction ID + checkbox ---
+  // Validation
   function looksLikeTxnId(v){
-    // Heuristic: PayPal IDs are alphanumeric; this prevents "123" and random junk
     return /^[A-Z0-9]{10,30}$/i.test((v || "").trim());
   }
 
   function updateLock(){
-    const ok = looksLikeTxnId(txnInput?.value) && !!confirmPaid?.checked;
+    const ok = looksLikeTxnId(txnInput?.value) && confirmPaid?.checked;
     if(afterBtn){
       afterBtn.disabled = !ok;
       afterBtn.style.opacity = ok ? "1" : ".55";
@@ -156,8 +150,8 @@ function initPay(){
     }
   }
 
-  if(txnInput) txnInput.addEventListener("input", updateLock);
-  if(confirmPaid) confirmPaid.addEventListener("change", updateLock);
+  txnInput?.addEventListener("input", updateLock);
+  confirmPaid?.addEventListener("change", updateLock);
   updateLock();
 
   if(afterBtn){
@@ -169,14 +163,20 @@ function initPay(){
       }
       order.txnId = txn;
       saveOrder(order);
-      window.location.href = `success.html?order=${encodeURIComponent(order.orderId)}`;
+      window.location.href = "success.html";
     });
   }
 }
 
+// --------------------
+// SUCCESS
+// --------------------
 function initSuccess(){
   const order = loadOrder();
-  if(!order){ window.location.href = "index.html"; return; }
+  if(!order){
+    window.location.href = "index.html";
+    return;
+  }
 
   setText("okOrder", order.orderId);
   setText("okType", order.typeLabel);
@@ -187,22 +187,23 @@ function initSuccess(){
   if (msgEl) msgEl.textContent = msg;
 
   const copyBtn = document.getElementById("copyBtn");
-  if (copyBtn){
-    copyBtn.addEventListener("click", async () => {
-      try{
-        await navigator.clipboard.writeText(msg);
-        copyBtn.textContent = "הועתק ✅";
-        setTimeout(()=> copyBtn.textContent = "העתק הודעה", 1200);
-      }catch{
-        alert("לא הצלחתי להעתיק. תסמן ידנית ותעשה Copy.");
-      }
-    });
-  }
+  copyBtn?.addEventListener("click", async () => {
+    try{
+      await navigator.clipboard.writeText(msg);
+      copyBtn.textContent = "הועתק ✅";
+      setTimeout(()=> copyBtn.textContent = "העתק הודעה", 1200);
+    }catch{
+      alert("לא הצלחתי להעתיק. תסמן ידנית ותעשה Copy.");
+    }
+  });
 }
 
+// --------------------
+// Router
+// --------------------
 (() => {
-  const t = (document.title || "").toLowerCase();
-  if (t.includes("unban") && !t.includes("checkout") && !t.includes("done")) initIndex();
+  const t = document.title.toLowerCase();
   if (t.includes("checkout")) initPay();
-  if (t.includes("done")) initSuccess();
+  else if (t.includes("done") || t.includes("success")) initSuccess();
+  else initIndex();
 })();
