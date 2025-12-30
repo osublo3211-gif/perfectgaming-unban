@@ -136,6 +136,20 @@ input:focus{
   line-height:1.65;
   margin-top:10px;
 }
+
+/* ✅ תוספות לטקסטים */
+.sep{border:none; border-top:1px solid rgba(255,255,255,.10); margin:14px 0}
+.callout{
+  margin-top:12px;
+  padding:12px;
+  border-radius: 18px;
+  border:1px dashed rgba(255,255,255,.18);
+  background: rgba(0,0,0,.18);
+}
+.callout b{display:block; margin-bottom:6px}
+.list{margin:0; padding:0 18px; color: rgba(234,240,255,.78)}
+.list li{margin:8px 0}
+
 @media (max-width: 980px){
   .split{grid-template-columns: 1fr}
   .h1{font-size:32px}
@@ -172,7 +186,7 @@ input:focus{
         <button class="btn btn-ghost" id="bitBtn" type="button" disabled style="opacity:.55; cursor:not-allowed">Bit (בקרוב)</button>
       </div>
 
-      <!-- נעילה עד שיש Transaction ID -->
+      <!-- ✅ נעילה עד שיש Transaction ID -->
       <div style="margin-top:14px">
         <label>PayPal Transaction ID (מזהה עסקה)</label>
         <input id="txnId" placeholder="לדוגמה: 9AB12345CD6789012" />
@@ -191,6 +205,27 @@ input:focus{
 
         <div class="hint">
           כדי להמשיך חייבים להזין Transaction ID ולאשר תשלום.
+        </div>
+      </div>
+
+      <hr class="sep">
+
+      <div class="callout">
+        <b>מה קורה אחרי התשלום?</b>
+        <ul class="list">
+          <li>מבצעים תשלום דרך PayPal בצורה מאובטחת.</li>
+          <li>מעתיקים את <b>Transaction ID</b> מהקבלה של PayPal ומדביקים כאן.</li>
+          <li>מסמנים “אישרתי ששילמתי” ולוחצים <b>“שילמתי – המשך”</b>.</li>
+          <li>במסך הבא תקבלו הודעה מוכנה לצוות (להעתקה).</li>
+          <li><b>זמן טיפול ממוצע:</b> עד 24 שעות.</li>
+        </ul>
+      </div>
+
+      <div class="callout" style="margin-top:12px">
+        <b>חשוב לדעת</b>
+        <div class="hint" style="text-align:right; margin-top:6px">
+          אין החזר כספי על בקשות Unban שנדחו או על תשלום שבוצע בטעות.<br>
+          עצם התשלום אינו מבטיח אישור — ההחלטה הסופית לפי בדיקת הצוות.
         </div>
       </div>
 
